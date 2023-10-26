@@ -1,5 +1,7 @@
 package com.advance.repository;
 
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
@@ -12,8 +14,7 @@ import com.advance.enumeration.RoleType;
 @Repository
 public interface UserRepository extends PagingAndSortingRepository<User, Long>, ListCrudRepository<User, Long> {
 
-	@Query(value = "SELECT * FROM User WHERE email = :email", nativeQuery = true)
-	User getUserByEmail(@Param("email") String email);
+	Optional<User> findByEmail(String email);
 
 	@Query(value = "UPDATE User SET is_using_mfa = :status WHERE id = :userId ", nativeQuery = true)
 	User toggleUsingMfa(@Param("userId") Long userId, @Param("status") Boolean status);

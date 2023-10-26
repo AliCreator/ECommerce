@@ -59,8 +59,7 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
 		// Whitelisted URIs for bypassing the filter
-		final Set<String> WHITE_LISTED_URIS = Set.of("/auth/register", "/auth/login", "/products", "/products/find/**",
-				"/products/update/**", "/orders/**"); // adjust paths accordingly
+		final Set<String> WHITE_LISTED_URIS = Set.of("/api/auth/register", "/api/auth/login"); // adjust paths accordingly
 
 		// 1. Check for OPTIONS requests
 		if (request.getMethod().equalsIgnoreCase("OPTIONS")) {
