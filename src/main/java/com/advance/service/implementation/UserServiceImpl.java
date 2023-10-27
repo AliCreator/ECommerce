@@ -233,7 +233,7 @@ public class UserServiceImpl implements UserService {
 		try {
 			for(RoleType role : RoleType.values()) {
 				if(role.name().equals(roleName)) {
-					return UserDtoMapper.convertToUserDTO(userRepo.updateUserRole(id, roleName));
+					return UserDtoMapper.convertToUserDTO(userRepo.updateUserRole(id, role.valueOf(roleName)));
 				}
 			}
 			throw new ApiException("The role does not comply!");

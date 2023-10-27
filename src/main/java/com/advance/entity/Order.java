@@ -50,7 +50,7 @@ public class Order {
 	private User user;
 	
 	
-	@OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+	@OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
 	@JsonIgnore
 	private Complaint complaint;
 	

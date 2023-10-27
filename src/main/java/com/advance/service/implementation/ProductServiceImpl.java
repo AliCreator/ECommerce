@@ -128,7 +128,13 @@ public class ProductServiceImpl implements ProductService {
 	@Override
 	public void updateProductForAvailability(Long productId, Boolean isAvailable) {
 		try {
-			productRepo.updateProductAvailability(productId, isAvailable);
+			if(isAvailable) {
+				productRepo.updateProductAvailability(productId, isAvailable);
+				productRepo.updateProductInStock(productId, 10);
+			} else {
+				productRepo.updateProductAvailability(productId, isAvailable);
+				productRepo.updateProductInStock(productId, 0);
+			}
 		} catch (Exception e) {
 			throw new ApiException("Somethig went wrong during updating product availability status!");
 		}
