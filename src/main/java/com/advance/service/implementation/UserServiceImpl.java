@@ -228,9 +228,15 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserDTO updateUserRole(Long id, RoleType roleName) {
+	public UserDTO updateUserRole(Long id, String roleName) {
+		
 		try {
-			return UserDtoMapper.convertToUserDTO(userRepo.updateUserRole(id, roleName));
+			for(RoleType role : RoleType.values()) {
+				if(role.name().equals(roleName)) {
+					return UserDtoMapper.convertToUserDTO(userRepo.updateUserRole(id, roleName));
+				}
+			}
+			throw new ApiException("The role does not comply!");
 		} catch (Exception e) {
 			throw new ApiException("Something went wrong during updating user role!");
 		}
@@ -247,7 +253,7 @@ public class UserServiceImpl implements UserService {
 	}
 
 	private String getVerificationUrl(String key, String type) {
-		return ServletUriComponentsBuilder.fromCurrentContextPath().path("/auth/verify/code/" + key + "/" + type)
+		return ServletUriComponentsBuilder.fromCurrentContextPath().path("/auth/verify/account/" + key + "/" + type)
 				.toUriString();
 	}
 

@@ -1,6 +1,6 @@
 #server:
 #  error:
-#    path: user/error
+#    path: api/auth/error
 #    whitelabel:
 #      enabled: false
 

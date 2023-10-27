@@ -38,6 +38,7 @@ import com.advance.service.UserService;
 
 import groovy.util.logging.Slf4j;
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -145,7 +146,7 @@ public class UserResources {
 
 	@PutMapping("/update/role/{roleName}")
 	public ResponseEntity<MyResponse> updateUserRole(@AuthenticationPrincipal User user,
-			@PathVariable("roleName") RoleType roleName) {
+			@PathVariable("roleName") String roleName) {
 		UserDTO dto = userService.updateUserRole(user.getId(), roleName);
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
 				.message("User role has been updated!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value())
@@ -166,12 +167,30 @@ public class UserResources {
 	public ResponseEntity<MyResponse> getAllUsersWithPagination(
 			@RequestParam("pageNumber") Optional<Integer> pageNumber,
 			@RequestParam("pageSize") Optional<Integer> pageSize) {
-		Page<UserDTO> page = userService.getAllUsersWithPagination(pageNumber.orElse(1), pageSize.orElse(10));
+		Page<UserDTO> page = userService.getAllUsersWithPagination(pageNumber.orElse(0), pageSize.orElse(10));
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
 				.message("Users paginated and retrieved!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value())
 				.data(Map.of("user", page)).build();
 		return ResponseEntity.ok().body(myResponse);
 	}
+
+	@PutMapping("/update/mfa")
+	public ResponseEntity<MyResponse> toggleMfa(@AuthenticationPrincipal User user,
+			@RequestParam("status") Boolean status) {
+		UserDTO dto = userService.toggleMfa(user.getId(), status);
+		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
+				.message("MFA status updated!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value())
+				.data(Map.of("user", dto)).build();
+		return ResponseEntity.ok().body(myResponse);
+	}
+
+//	@RequestMapping("/error")
+//	public ResponseEntity<MyResponse> handleError(HttpServletRequest req) {
+//		return ResponseEntity.badRequest()
+//				.body(MyResponse.builder().timestamp(LocalDateTime.now().toString()).httpStatus(HttpStatus.BAD_REQUEST)
+//						.status(HttpStatus.BAD_REQUEST.value())
+//						.message("There is no endpoint for " + req.getMethod() + " on this server!").build());
+//	}
 
 	private Cookie createCookie(String token) {
 		Cookie cookie = new Cookie("jwt", token);

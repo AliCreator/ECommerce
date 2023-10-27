@@ -19,6 +19,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -43,18 +44,25 @@ public class Product {
 	private String description; 
 	private Float price; 
 	private Boolean availability; 
-	private Integer inStock; 
-//	private Category category; 
+	private Integer inStock;
+	
+	@ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+	@JoinColumn(name = "category_id")
+	private Category category; 
 	private Boolean isFeatured;
 	private Integer numReviews; 
 	private Double rating; 
 	private String coverPhoto; 
 	private Long boughtNum;
 	private List<String> allPhotos; 
+	private Boolean isSeasonal;
 	
-//	@ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
-//	@JoinColumn(name = "detail_id")
-//	private Detail details;
+	@ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+	@JoinColumn(name = "detail_id")
+	private Detail details;
+	
+	@OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "product")
+	private List<Review> reviews;
 	
 	
 	@CreationTimestamp
