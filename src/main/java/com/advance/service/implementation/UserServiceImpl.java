@@ -228,9 +228,9 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public void updateUserRole(Long id, RoleType roleName) {
+	public UserDTO updateUserRole(Long id, RoleType roleName) {
 		try {
-			userRepo.updateUserRole(id, roleName);
+			return UserDtoMapper.convertToUserDTO(userRepo.updateUserRole(id, roleName));
 		} catch (Exception e) {
 			throw new ApiException("Something went wrong during updating user role!");
 		}

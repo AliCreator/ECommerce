@@ -35,7 +35,7 @@ import lombok.RequiredArgsConstructor;
 public class SecurityConfig {
 
 	private static final String[] PUBLIC_URLS = { "/api/auth/login/**", "/api/auth/register/**",
-			"/api/auth/resetpassword/**", "/api/auth/verify/code/**", "/api/auth/verify/password/**",
+			"/api/auth/forgot/password/**", "/api/auth/verify/code/**", "/api/auth/verify/password/**",
 			"/api/auth/verify/account/**", "/api/auth/new/password/**", "/api/products/get/**" };
 	private final Integer STRENGTH = 12;
 
