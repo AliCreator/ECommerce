@@ -12,10 +12,12 @@ import com.advance.exception.ApiException;
 import com.advance.repository.OrderRepository;
 import com.advance.service.OrderService;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class OrderServiceImpl implements OrderService {
 
 	private final OrderRepository orderRepo;

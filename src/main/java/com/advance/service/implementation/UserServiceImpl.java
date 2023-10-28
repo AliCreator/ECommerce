@@ -51,7 +51,7 @@ public class UserServiceImpl implements UserService {
 	public UserDTO getUserById(Long userId) {
 		try {
 			Optional<User> user = userRepo.findById(userId);
-			if(user.isPresent()) {
+			if (user.isPresent()) {
 				return UserDtoMapper.convertToUserDTO(user.get());
 			}
 		} catch (Exception e) {
@@ -64,7 +64,7 @@ public class UserServiceImpl implements UserService {
 	public UserDTO getUserByEmail(String email) {
 		try {
 			Optional<User> user = userRepo.findByEmail(email);
-			if(user.isPresent()) {
+			if (user.isPresent()) {
 				return UserDtoMapper.convertToUserDTO(user.get());
 			}
 		} catch (Exception e) {
@@ -75,8 +75,8 @@ public class UserServiceImpl implements UserService {
 
 	@Override
 	public UserDTO register(User user) {
-		
-		if(getUserByEmail(user.getEmail().trim().toLowerCase()) != null) {
+
+		if (getUserByEmail(user.getEmail().trim().toLowerCase()) != null) {
 			throw new ApiException("User is already registered. Please login!");
 		}
 		try {
@@ -88,7 +88,8 @@ public class UserServiceImpl implements UserService {
 
 			User newUser = userRepo.save(user);
 			// Create verification code and send it through email
-			String verificationUrl = getVerificationUrl(UUID.randomUUID().toString(), VerificationType.ACCOUNT.name().toLowerCase());
+			String verificationUrl = getVerificationUrl(UUID.randomUUID().toString(),
+					VerificationType.ACCOUNT.name().toLowerCase());
 			Verification verification = Verification.builder().createdAt(LocalDateTime.now()).url(verificationUrl)
 					.expiredAt(LocalDateTime.now().plusDays(3)).user(newUser).build();
 			verificationRepo.save(verification);
@@ -228,15 +229,12 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserDTO updateUserRole(Long id, String roleName) {
-		
+	public UserDTO updateUserRole(Long id, RoleType roleName) {
+
 		try {
-			for(RoleType role : RoleType.values()) {
-				if(role.name().equals(roleName)) {
-					return UserDtoMapper.convertToUserDTO(userRepo.updateUserRole(id, role.valueOf(roleName)));
-				}
-			}
-			throw new ApiException("The role does not comply!");
+
+			return UserDtoMapper.convertToUserDTO(userRepo.updateUserRole(id, roleName));
+
 		} catch (Exception e) {
 			throw new ApiException("Something went wrong during updating user role!");
 		}
@@ -277,4 +275,3 @@ public class UserServiceImpl implements UserService {
 	}
 
 }
-

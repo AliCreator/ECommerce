@@ -146,7 +146,7 @@ public class UserResources {
 
 	@PutMapping("/update/role/{roleName}")
 	public ResponseEntity<MyResponse> updateUserRole(@AuthenticationPrincipal User user,
-			@PathVariable("roleName") String roleName) {
+			@PathVariable("roleName") RoleType roleName) {
 		UserDTO dto = userService.updateUserRole(user.getId(), roleName);
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
 				.message("User role has been updated!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value())
@@ -196,7 +196,8 @@ public class UserResources {
 		Cookie cookie = new Cookie("jwt", token);
 		cookie.setMaxAge(86400 * 3);
 		cookie.setHttpOnly(true);
-		cookie.setDomain("/");
+		cookie.setDomain("localhost");
+		cookie.setPath("/");
 		return cookie;
 	}
 
