@@ -6,11 +6,13 @@ import java.util.List;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import com.advance.enumeration.ComplaintReason;
 import com.advance.enumeration.ComplaintStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -46,6 +48,9 @@ public class Complaint {
 	@Enumerated(EnumType.STRING)
 	private ComplaintStatus status;
 	
+	@Enumerated(EnumType.STRING)
+	private ComplaintReason reason;
+	
 	
 	@OneToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "order_id")
@@ -53,12 +58,12 @@ public class Complaint {
 	private Order order;
 	
 	
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "user_id")
 	@JsonIgnore
 	private User user; 
 	
-	@ManyToOne
+	@ManyToOne(fetch = FetchType.EAGER)
 	@JoinColumn(name = "employee_id")
 	@JsonIgnore
 	private User employee;
@@ -69,7 +74,7 @@ public class Complaint {
 	@UpdateTimestamp
 	private LocalDate updatedAt;
 	
-	@OneToMany(mappedBy = "complaint")
+	@OneToMany(mappedBy = "complaint", cascade = CascadeType.ALL)
 	private List<ComplaintMessage> messages;
 	
 }

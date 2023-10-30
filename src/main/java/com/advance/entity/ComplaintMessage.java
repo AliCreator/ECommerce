@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -50,17 +51,18 @@ public class ComplaintMessage {
 	private User sender;
 	
 	
-	@ManyToOne
-	@JoinColumn(name = "receiver_id")
-	@JsonIgnore
-	private User receiver; 
+//	@ManyToOne
+//	@JoinColumn(name = "receiver_id")
+//	@JsonIgnore
+//	private User receiver; 
 	
 	private Boolean seen;
 	
 	private String image;
 	
-	@ManyToOne
+	@ManyToOne(cascade = CascadeType.ALL)
 	@JoinColumn(name = "complaint_id")
+	@JsonIgnore
 	private Complaint complaint;
 	
 	

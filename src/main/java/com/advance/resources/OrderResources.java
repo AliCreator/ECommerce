@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -123,13 +124,23 @@ public class OrderResources {
 				.status(HttpStatus.OK.value()).httpStatus(HttpStatus.OK).build();
 		return ResponseEntity.ok().body(myResponse);
 	}
-	
+
 	@PutMapping("/update/{id}/discount")
 	public ResponseEntity<MyResponse> updateOrderWithDiscountPrice(@PathVariable("id") Long id,
 			@RequestParam("discount") Double discount) {
 		orderService.updateOrderByDiscount(id, discount);
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString()).message("Order updated!")
 				.status(HttpStatus.OK.value()).httpStatus(HttpStatus.OK).build();
+		return ResponseEntity.ok().body(myResponse);
+	}
+
+	@DeleteMapping("/delete/{id}")
+	public ResponseEntity<MyResponse> deleteOrder(@PathVariable("id") Long id) {
+		Boolean status = orderService.deleteOrder(id);
+		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
+				.status(status ? HttpStatus.OK.value() : HttpStatus.BAD_REQUEST.value())
+				.httpStatus(status ? HttpStatus.OK : HttpStatus.BAD_REQUEST)
+				.message(status ? "Order deleted" : "An error occured").build();
 		return ResponseEntity.ok().body(myResponse);
 	}
 

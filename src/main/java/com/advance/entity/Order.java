@@ -52,7 +52,6 @@ public class Order {
 	
 	
 	@OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-	@JsonIgnore
 	private Complaint complaint;
 	
 	@Embedded
