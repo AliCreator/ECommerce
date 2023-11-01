@@ -37,10 +37,12 @@ import jakarta.persistence.NonUniqueResultException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
+@Slf4j
 public class UserServiceImpl implements UserService {
 
 	private final UserRepository userRepo;
@@ -160,6 +162,8 @@ public class UserServiceImpl implements UserService {
 			verificationCodeRepo.save(verificationCode);
 			String messageBody = "Your verification code is: \n" + code;
 			SmsUtil.sendSms(user.getPhone(), messageBody);
+		} catch (EntityNotFoundException e) {
+			e.printStackTrace();
 		} catch (Exception e) {
 			throw new ApiException("There was a problem while sending the verification code to phone!");
 		}
@@ -178,8 +182,8 @@ public class UserServiceImpl implements UserService {
 		}
 	}
 
-	private boolean isPasswordKeyExpired(String key, VerificationType password) {
-		Verification verification = verificationRepo.getVerificationByUrl(getVerificationUrl(key, password.name()));
+	private boolean isPasswordKeyExpired(String key, VerificationType type) {
+		Verification verification = verificationRepo.getVerificationByUrl(getVerificationUrl(key, type.name()));
 		return verification.getExpiredAt().isBefore(LocalDateTime.now());
 	}
 
@@ -188,6 +192,12 @@ public class UserServiceImpl implements UserService {
 		if (!password.equals(confirmPassword))
 			throw new ApiException("Password and confirmed password should match!");
 		try {
+			String url = getVerificationUrl(key, VerificationType.PASSWORD.name());
+			Verification verification = verificationRepo.getVerificationByUrl(url);
+			if (isVerificationUrlExpired(verification)) {
+				throw new ApiException("Your verification url is expired. Please request new url!");
+			}
+
 			User user = userRepo.updateUserPasswordWithKey(encoder.encode(password),
 					getVerificationUrl(key, VerificationType.PASSWORD.name()));
 			Verification ver = verificationRepo
@@ -195,7 +205,11 @@ public class UserServiceImpl implements UserService {
 			verificationRepo.deleteById(ver.getId());
 			userRepo.save(user);
 
-		} catch (Exception e) {
+		} catch (EntityNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		catch (Exception e) {
 			throw new ApiException("Something went wrong during updating password with key!");
 		}
 
@@ -265,6 +279,14 @@ public class UserServiceImpl implements UserService {
 				.toUriString();
 	}
 
+	private Boolean isVerificationUrlExpired(Verification verification) {
+		LocalDateTime expiredAt = verification.getExpiredAt();
+		if (expiredAt.isBefore(LocalDateTime.now())) {
+			return true;
+		}
+		return false;
+	}
+
 	@Override
 	public void sendResetPasswordUrl(String email) {
 		UserDTO dto = getUserByEmail(email);
@@ -275,10 +297,14 @@ public class UserServiceImpl implements UserService {
 			Verification verification = Verification.builder().createdAt(LocalDateTime.now())
 					.expiredAt(LocalDateTime.now().plusDays(1)).url(url).user(UserDtoMapper.convertToUser(dto)).build();
 			verificationRepo.save(verification);
-			System.out.println(verification);
+			log.info(url);
 //			emailService.send(dto.getEmail(), dto.getFirstName(), "reset-password", url);
 
-		} catch (Exception e) {
+		} catch (EntityNotFoundException e) {
+			e.printStackTrace();
+		}
+
+		catch (Exception e) {
 			throw new ApiException("There was a problem sending rset password url!");
 		}
 

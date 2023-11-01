@@ -16,6 +16,7 @@ public interface ProductService {
 	List<ProductCard> getProductBySeasonalStatus(Boolean isSeasonal); 
 	List<ProductCard> getProductByIsFeatured(Boolean isFeatured); 
 	Product updateProduct(Product product); 
+	void wishlistAdd(Long userId, Long productId);
 	void updateProductAfterPurchase(Long productId, Optional<Long> purchaseAmount);
 	void updateProductForIsFeatured(Long productId, Boolean isFeatured); 
 	void updateProductForAvailability(Long productId, Boolean isAvailable); 
