@@ -10,6 +10,6 @@ import com.advance.entity.Verification;
 @Repository
 public interface VerificationRepository extends CrudRepository<Verification, Long>{
 
-	@Query(value= "SELECT * FROM Verifications WHERE url = :url", nativeQuery = true)
+	@Query(value= "SELECT * FROM Verification WHERE url = :url", nativeQuery = true)
 	Verification getVerificationByUrl(@Param("url") String url);
 }

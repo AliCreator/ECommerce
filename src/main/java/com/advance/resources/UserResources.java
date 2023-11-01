@@ -106,7 +106,7 @@ public class UserResources {
 		return ResponseEntity.ok().body(myResponse);
 	}
 
-	@GetMapping("/forgot/password")
+	@PostMapping("/forgot/password")
 	public ResponseEntity<MyResponse> forgotPassword(@RequestBody ForgotPasswordForm form) {
 		userService.sendResetPasswordUrl(form.getEmail());
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
@@ -118,17 +118,18 @@ public class UserResources {
 	public ResponseEntity<MyResponse> updatePasswordWithKey(@PathVariable("key") String key,
 			@Valid @RequestBody ResetForgotPasswordForm form) {
 		userService.renewPassword(key, form.getPassword(), form.getConfirmPassword());
+		
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
 				.message("Password updated. Please login!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value())
 				.build();
 		return ResponseEntity.ok().body(myResponse);
 	}
 
-	@GetMapping("/verify/account/{key}")
+	@PostMapping("/verify/account/{key}")
 	public ResponseEntity<MyResponse> verifyAccountAfterRegister(@PathVariable("key") String key) {
-		userService.verifyAccount(key);
+		UserDTO dto = userService.verifyAccount(key);
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
-				.message("Account verified. Please login!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value())
+				.message("Account verified!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value()).data(Map.of("user", dto))
 				.build();
 		return ResponseEntity.ok().body(myResponse);
 	}
@@ -147,21 +148,21 @@ public class UserResources {
 
 	@PutMapping("/update/info")
 	public ResponseEntity<MyResponse> upadteUserInfo(@AuthenticationPrincipal User user, @Valid UpdateForm form) {
-		UserDTO dto = userService.updateUserDetails(form);
+		userService.updateUserDetails(form);
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
 				.message("User details have been updated!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value())
-				.data(Map.of("user", dto)).build();
+				.data(Map.of("user", userService.getUserById(user.getId()))).build();
 		return ResponseEntity.ok().body(myResponse);
 	}
 
 	@PutMapping("/update/role/{roleName}")
 	public ResponseEntity<MyResponse> updateUserRole(@AuthenticationPrincipal User user,
 			@PathVariable("roleName") RoleType roleName) {
-		UserDTO dto = userService.updateUserRole(user.getId(), roleName);
-		publisher.publishEvent(new NewUserEvent(dto.getEmail(), EventType.ROLE_UPDATE));
+		userService.updateUserRole(user.getId(), roleName);
+		publisher.publishEvent(new NewUserEvent(user.getEmail(), EventType.ROLE_UPDATE));
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
 				.message("User role has been updated!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value())
-				.data(Map.of("user", dto, "events", eventService.getEventsByUserId(dto.getId()))).build();
+				.data(Map.of("user", userService.getUserById(user.getId()), "events", eventService.getEventsByUserId(user.getId()))).build();
 		return ResponseEntity.ok().body(myResponse);
 	}
 
@@ -188,11 +189,11 @@ public class UserResources {
 	@PutMapping("/update/mfa")
 	public ResponseEntity<MyResponse> toggleMfa(@AuthenticationPrincipal User user,
 			@RequestParam("status") Boolean status) {
-		UserDTO dto = userService.toggleMfa(user.getId(), status);
-		publisher.publishEvent(new NewUserEvent(dto.getEmail(), EventType.MFA_UPDATE));
+		userService.toggleMfa(user.getId(), status);
+		publisher.publishEvent(new NewUserEvent(user.getEmail(), EventType.MFA_UPDATE));
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
 				.message("MFA status updated!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value())
-				.data(Map.of("user", dto, "events", eventService.getEventsByUserId(dto.getId()))).build();
+				.data(Map.of("user", userService.getUserById(user.getId()), "events", eventService.getEventsByUserId(user.getId()))).build();
 		return ResponseEntity.ok().body(myResponse);
 	}
 

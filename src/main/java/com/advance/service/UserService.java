@@ -23,9 +23,9 @@ public interface UserService {
 	UserDTO verifyPasswordKey(String key);
 	void renewPassword(String key, String password, String confirmPassword);
 	UserDTO verifyAccount(String key);
-	UserDTO updateUserDetails(@Valid UpdateForm user);
+	void updateUserDetails(@Valid UpdateForm user);
 	void updateUserPassword(Long id, String currentPassword, String newPassword, String confirmNewPassword);
-	UserDTO updateUserRole(Long id, RoleType roleName);
-	UserDTO toggleMfa(Long userId, Boolean status);
+	void updateUserRole(Long id, RoleType roleName);
+	void toggleMfa(Long userId, Boolean status);
 	
 }

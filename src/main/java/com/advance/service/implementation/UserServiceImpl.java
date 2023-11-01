@@ -102,8 +102,9 @@ public class UserServiceImpl implements UserService {
 			// Create verification code and send it through email
 			String verificationUrl = getVerificationUrl(UUID.randomUUID().toString(),
 					VerificationType.ACCOUNT.name().toLowerCase());
+			log.info(verificationUrl);
 			Verification verification = Verification.builder().createdAt(LocalDateTime.now()).url(verificationUrl)
-					.expiredAt(LocalDateTime.now().plusDays(3)).user(newUser).build();
+					.expiredAt(LocalDateTime.now().plusDays(30)).user(newUser).build();
 			verificationRepo.save(verification);
 //			emailService.send(newUser.getEmail(), newUser.getFirstName(), null, verificationUrl);
 
@@ -198,15 +199,12 @@ public class UserServiceImpl implements UserService {
 				throw new ApiException("Your verification url is expired. Please request new url!");
 			}
 
-			User user = userRepo.updateUserPasswordWithKey(encoder.encode(password),
-					getVerificationUrl(key, VerificationType.PASSWORD.name()));
+			userRepo.updateUserPasswordWithKey(encoder.encode(password), url);
 			Verification ver = verificationRepo
 					.getVerificationByUrl(getVerificationUrl(key, VerificationType.PASSWORD.name()));
 			verificationRepo.deleteById(ver.getId());
-			userRepo.save(user);
 
 		} catch (EntityNotFoundException e) {
-			e.printStackTrace();
 		}
 
 		catch (Exception e) {
@@ -218,7 +216,11 @@ public class UserServiceImpl implements UserService {
 	@Override
 	public UserDTO verifyAccount(String key) {
 		try {
-			User user = userRepo.getUserByPasswordKey(getVerificationUrl(key, VerificationType.ACCOUNT.name()));
+			String url = getVerificationUrl(key, VerificationType.ACCOUNT.name());
+			if (isVerificationUrlExpired(verificationRepo.getVerificationByUrl(url))) {
+				throw new ApiException("Url expired. Please register with a new email!");
+			}
+			User user = userRepo.getUserByPasswordKey(url);
 			user.setIsEnabled(true);
 			userRepo.save(user);
 			return UserDtoMapper.convertToUserDTO(user);
@@ -228,10 +230,10 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserDTO updateUserDetails(@Valid UpdateForm user) {
+	public void updateUserDetails(@Valid UpdateForm user) {
 		try {
-			return UserDtoMapper.convertToUserDTO(
-					userRepo.udpateUserFields(user.getId(), user.getFirstName(), user.getLastName(), user.getPhone()));
+
+			userRepo.udpateUserFields(user.getId(), user.getFirstName(), user.getLastName(), user.getPhone());
 		} catch (Exception e) {
 			throw new ApiException("Something went wrong during updating user details!");
 		}
@@ -253,11 +255,11 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserDTO updateUserRole(Long id, RoleType roleName) {
+	public void updateUserRole(Long id, RoleType roleName) {
 
 		try {
 
-			return UserDtoMapper.convertToUserDTO(userRepo.updateUserRole(id, roleName));
+			userRepo.updateUserRole(id, roleName);
 
 		} catch (Exception e) {
 			throw new ApiException("Something went wrong during updating user role!");
@@ -266,16 +268,16 @@ public class UserServiceImpl implements UserService {
 	}
 
 	@Override
-	public UserDTO toggleMfa(Long userId, Boolean status) {
+	public void toggleMfa(Long userId, Boolean status) {
 		try {
-			return UserDtoMapper.convertToUserDTO(userRepo.toggleUsingMfa(userId, status));
+			userRepo.toggleUsingMfa(userId, status);
 		} catch (Exception e) {
 			throw new ApiException("There was a problem udpating the MFA!");
 		}
 	}
 
 	private String getVerificationUrl(String key, String type) {
-		return ServletUriComponentsBuilder.fromCurrentContextPath().path("/auth/verify/account/" + key + "/" + type)
+		return ServletUriComponentsBuilder.fromCurrentContextPath().path("/api/auth/verify/account/" + key + "/" + type)
 				.toUriString();
 	}
 

@@ -133,7 +133,7 @@ public class ProductResources {
 	@PutMapping("/wishlist/{productId}")
 	public ResponseEntity<MyResponse> wishlistAdd(@AuthenticationPrincipal User user,
 			@PathVariable("productId") Long productId) {
-		productService.wishlistAdd(productId, productId);
+		productService.wishlistAdd(user.getId(), productId);
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
 				.status(HttpStatus.OK.value()).httpStatus(HttpStatus.OK).message("Product added to wishlist!").build();
 		return ResponseEntity.ok().body(myResponse);
