@@ -32,7 +32,7 @@ import lombok.RequiredArgsConstructor;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
-public class SecurityConfig {
+public class SecurityConfiguration {
 
 	private static final String[] PUBLIC_URLS = { "/api/auth/login/**", "/api/auth/register/**",
 			"/api/auth/forgot/password/**", "/api/auth/verify/code/**", "/api/auth/verify/password/**",

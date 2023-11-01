@@ -2,10 +2,12 @@ package com.advance.resources;
 
 import java.net.URI;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,19 +28,23 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import com.advance.dto.UserDTO;
 import com.advance.entity.MyResponse;
 import com.advance.entity.User;
+import com.advance.entity.UserEvent;
 import com.advance.entity.UserPrincipal;
+import com.advance.enumeration.EventType;
 import com.advance.enumeration.RoleType;
+import com.advance.event.NewUserEvent;
+import com.advance.exception.ApiException;
 import com.advance.form.ForgotPasswordForm;
 import com.advance.form.LoginForm;
 import com.advance.form.ResetForgotPasswordForm;
 import com.advance.form.UpdateForm;
 import com.advance.form.UpdatePasswordForm;
 import com.advance.provider.TokenProvider;
+import com.advance.service.NewEventService;
 import com.advance.service.UserService;
 
 import groovy.util.logging.Slf4j;
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -52,6 +58,8 @@ public class UserResources {
 	private final UserService userService;
 	private final AuthenticationManager authManager;
 	private final TokenProvider provider;
+	private final ApplicationEventPublisher publisher;
+	private final NewEventService eventService;
 
 	@PostMapping("/register")
 	public ResponseEntity<MyResponse> register(@RequestBody User user) {
@@ -64,14 +72,14 @@ public class UserResources {
 
 	@PostMapping("/login")
 	public ResponseEntity<MyResponse> login(@RequestBody LoginForm form, HttpServletResponse response) {
-		Authentication authentication = authManager
-				.authenticate(new UsernamePasswordAuthenticationToken(form.getEmail(), form.getPassword()));
+		Authentication authentication = authentication(form.getEmail(), form.getPassword());
 		String token = provider.generateToken((UserPrincipal) authentication.getPrincipal());
 		Cookie cookie = createCookie(token);
 		response.addCookie(cookie);
 		UserDTO dto = ((UserPrincipal) authentication.getPrincipal()).getUser();
+		Collection<UserEvent> eventsByUserId = eventService.getEventsByUserId(dto.getId());
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
-				.message("Logged in successfully!").data(Map.of("user", dto)).build();
+				.message("Logged in successfully!").data(Map.of("user", dto, "events", eventsByUserId)).build();
 
 		return ResponseEntity.ok().body(myResponse);
 	}
@@ -130,8 +138,10 @@ public class UserResources {
 			@Valid @RequestBody UpdatePasswordForm form) {
 		userService.updateUserPassword(user.getId(), form.getCurrentPassword(), form.getNewPassword(),
 				form.getConfirmPassword());
+		publisher.publishEvent(new NewUserEvent(user.getEmail(), EventType.PASSWORD_UPDATE));
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
-				.message("Password has been updated!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value()).build();
+				.message("Password has been updated!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value())
+				.data(Map.of("events", eventService.getEventsByUserId(user.getId()))).build();
 		return ResponseEntity.ok().body(myResponse);
 	}
 
@@ -148,9 +158,10 @@ public class UserResources {
 	public ResponseEntity<MyResponse> updateUserRole(@AuthenticationPrincipal User user,
 			@PathVariable("roleName") RoleType roleName) {
 		UserDTO dto = userService.updateUserRole(user.getId(), roleName);
+		publisher.publishEvent(new NewUserEvent(dto.getEmail(), EventType.ROLE_UPDATE));
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
 				.message("User role has been updated!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value())
-				.data(Map.of("user", dto)).build();
+				.data(Map.of("user", dto, "events", eventService.getEventsByUserId(dto.getId()))).build();
 		return ResponseEntity.ok().body(myResponse);
 	}
 
@@ -178,9 +189,10 @@ public class UserResources {
 	public ResponseEntity<MyResponse> toggleMfa(@AuthenticationPrincipal User user,
 			@RequestParam("status") Boolean status) {
 		UserDTO dto = userService.toggleMfa(user.getId(), status);
+		publisher.publishEvent(new NewUserEvent(dto.getEmail(), EventType.MFA_UPDATE));
 		MyResponse myResponse = MyResponse.builder().timestamp(LocalDateTime.now().toString())
 				.message("MFA status updated!").httpStatus(HttpStatus.OK).status(HttpStatus.OK.value())
-				.data(Map.of("user", dto)).build();
+				.data(Map.of("user", dto, "events", eventService.getEventsByUserId(dto.getId()))).build();
 		return ResponseEntity.ok().body(myResponse);
 	}
 
@@ -203,5 +215,22 @@ public class UserResources {
 
 	private URI getURI() {
 		return URI.create(ServletUriComponentsBuilder.fromCurrentContextPath().path("/get/<userId>").toUriString());
+	}
+
+	private Authentication authentication(String email, String password) {
+		try {
+			UserDTO dto = userService.getUserByEmail(email);
+			if (null != dto) {
+				publisher.publishEvent(new NewUserEvent(email, EventType.LOGIN_ATTEMPT));
+			}
+			Authentication authentication = authManager
+					.authenticate(new UsernamePasswordAuthenticationToken(email, password));
+			publisher.publishEvent(new NewUserEvent(email, EventType.LOGIN_ATTEMPT_SUCCESS));
+			return authentication;
+		} catch (Exception e) {
+			publisher.publishEvent(new NewUserEvent(email, EventType.LOGIN_ATTEMPT_FAILURE));
+			throw new ApiException("Invalid credentials");
+		}
+
 	}
 }

@@ -32,6 +32,8 @@ import com.advance.service.UserService;
 import com.advance.utils.SmsUtil;
 import com.advance.utils.UserDtoMapper;
 
+import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.NonUniqueResultException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -54,10 +56,16 @@ public class UserServiceImpl implements UserService {
 			if (user.isPresent()) {
 				return UserDtoMapper.convertToUserDTO(user.get());
 			}
-		} catch (Exception e) {
+
+			return null;
+		} catch (EntityNotFoundException e) {
 			throw new ApiException("User was not found!");
 		}
-		return null;
+
+		catch (Exception e) {
+			throw new ApiException("An error occured!");
+		}
+
 	}
 
 	@Override
@@ -67,8 +75,10 @@ public class UserServiceImpl implements UserService {
 			if (user.isPresent()) {
 				return UserDtoMapper.convertToUserDTO(user.get());
 			}
-		} catch (Exception e) {
+		} catch (EntityNotFoundException e) {
 			throw new ApiException("User was not found!");
+		} catch (Exception e) {
+			throw new ApiException("An error occured!");
 		}
 		return null;
 	}

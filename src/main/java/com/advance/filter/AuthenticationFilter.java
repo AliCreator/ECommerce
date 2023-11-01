@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.advance.provider.TokenProvider;
+import com.advance.utils.ExceptionUtils;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -29,27 +30,31 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 	@Override
 	protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
 			throws ServletException, IOException {
-		Cookie[] cookies = request.getCookies();
-		String jwt = null;
-		for (Cookie cookie : cookies) {
-			if (JWT.equals(cookie.getName())) {
-				jwt = cookie.getValue();
+		try {
+			Cookie[] cookies = request.getCookies();
+			String jwt = null;
+			for (Cookie cookie : cookies) {
+				if (JWT.equals(cookie.getName())) {
+					jwt = cookie.getValue();
 
-				break;
+					break;
+				}
 			}
-		}
 
-		if (jwt != null && !jwt.isEmpty()) {
-			Long id = getUser(request, jwt);
-			if (provider.isTokenValid(id, jwt)) {
-				List<GrantedAuthority> authorities = provider.getAuthorities(jwt);
-				Authentication authentication = provider.getAuthentication(id, authorities, request);
-				SecurityContextHolder.getContext().setAuthentication(authentication);
-			} else {
-				SecurityContextHolder.clearContext();
+			if (jwt != null && !jwt.isEmpty()) {
+				Long id = getUser(request, jwt);
+				if (provider.isTokenValid(id, jwt)) {
+					List<GrantedAuthority> authorities = provider.getAuthorities(jwt);
+					Authentication authentication = provider.getAuthentication(id, authorities, request);
+					SecurityContextHolder.getContext().setAuthentication(authentication);
+				} else {
+					SecurityContextHolder.clearContext();
+				}
 			}
+			filterChain.doFilter(request, response);
+		} catch (Exception e) {
+			ExceptionUtils.processError(request, response, e);
 		}
-		filterChain.doFilter(request, response);
 	}
 
 	private Long getUser(HttpServletRequest request, String jwt) {
@@ -59,7 +64,8 @@ public class AuthenticationFilter extends OncePerRequestFilter {
 	@Override
 	protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
 		// Whitelisted URIs for bypassing the filter
-		final Set<String> WHITE_LISTED_URIS = Set.of("/api/auth/register", "/api/auth/login", "/api/auth/forgot/password"); // adjust paths accordingly
+		final Set<String> WHITE_LISTED_URIS = Set.of("/api/auth/register", "/api/auth/login",
+				"/api/auth/forgot/password"); // adjust paths accordingly
 
 		// 1. Check for OPTIONS requests
 		if (request.getMethod().equalsIgnoreCase("OPTIONS")) {
